@@ -25,8 +25,12 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include "log.h"
+
+#define MAX_FUNC_SAVE 32
+#define MAX_FUNC_LENGTH 64
 
 static struct {
   void *udata;
@@ -36,6 +40,15 @@ static struct {
   int quiet;
 } L;
 
+static struct func_info{
+	bool inUse;
+	int  recoderLine;
+	char funcName[MAX_FUNC_LENGTH];
+	long seqCounter; 
+};
+
+//staticの意味をもう少し知ろう
+static struct func_info func_list[MAX_FUNC_SAVE] = {0}; 
 
 static const char *level_names[] = {
   "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
@@ -47,6 +60,7 @@ static const char *level_colors[] = {
 };
 #endif
 
+static int trace_function(const int line, const char *function_name);
 
 static void lock(void)   {
   if (L.lock) {
@@ -86,14 +100,25 @@ void log_set_quiet(int enable) {
   L.quiet = enable ? 1 : 0;
 }
 
+/* TODO:
+ * trace function 
+ * semaphore
+ * dumpFile
+ * */
 
-void log_log(int level, const char *file, int line, const char *fmt, ...) {
-  if (level < L.level) {
+void log_log(int level, const char *function, int line, const char *fmt, ...) 
+{
+
+  if (level < L.level) 
+  {
     return;
   }
 
   /* Acquire lock */
+  //セマフォ管理しよう
   lock();
+  int index = trace_function(line, function);
+  printf("idnex :%d \n" ,index);
 
   /* Get current time */
   time_t t = time(NULL);
@@ -107,11 +132,17 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
 #ifdef LOG_USE_COLOR
     fprintf(
       stderr, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
-      buf, level_colors[level], level_names[level], file, line);
+      buf, level_colors[level], level_names[level], function, line);
 #else
-    fprintf(stderr, "%s %-5s %s:%d: ", buf, level_names[level], file, line);
+    fprintf(stderr, 
+			"%s %-5s %s:%d:[seq]:%ld ", 
+			buf, 
+			level_names[level],
+			function,
+			line,
+			func_list[index].seqCounter);
 #endif
-    va_start(args, fmt);
+    va_start(args, fmt);//これの使い方はまたイマイチ、何これ〜〜〜
     vfprintf(stderr, fmt, args);
     va_end(args);
     fprintf(stderr, "\n");
@@ -119,11 +150,12 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
   }
 
   /* Log to file */
-  if (L.fp) {
+  if (L.fp) 
+  {
     va_list args;
     char buf[32];
     buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", lt)] = '\0';
-    fprintf(L.fp, "%s %-5s %s:%d: ", buf, level_names[level], file, line);
+    fprintf(L.fp, "%s %-5s %s:%d: ", buf, level_names[level], function, line);
     va_start(args, fmt);
     vfprintf(L.fp, fmt, args);
     va_end(args);
@@ -133,4 +165,43 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
 
   /* Release lock */
   unlock();
+  //セマフォ管理しよう THE END
+}
+
+
+static int trace_function(const int line, const char *function_name)
+{
+	bool foundFuncInList = false;
+	int  i,ret_index;
+
+	i = 0;
+	while(func_list[i].inUse)
+	{
+		//比較して、同じ関数があるあるならば
+		if(0 == strcmp(function_name, func_list[i].funcName))
+		{
+			if(line == func_list[i].recoderLine)
+			{
+				func_list[i].seqCounter++;
+			}
+			ret_index = i;
+			foundFuncInList = true;
+			break;
+		}
+			i++;
+	}
+
+	/* バグが存在している */
+	if (!foundFuncInList)
+	{
+		ret_index= i++;
+		printf("ret_index = %d\n", ret_index);
+		func_list[ret_index].inUse = true;
+		func_list[ret_index].recoderLine = line;
+		func_list[ret_index].seqCounter = 1;
+		strcpy(func_list[ret_index].funcName, function_name);
+		printf("function %s, list.funcName: %s\n", function_name, func_list[ret_index].funcName);
+	}
+
+	return ret_index;
 }
