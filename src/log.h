@@ -12,6 +12,7 @@
 #include <stdarg.h>
 
 #define LOG_VERSION "0.1.0"
+#define LOG_WORD "logme"
 
 typedef void (*log_LockFn)(void *udata, int lock);
 
@@ -23,6 +24,14 @@ enum { LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL };
 #define log_warn(...)  log_log(LOG_WARN,  __FUNCTION__, __LINE__, __VA_ARGS__)
 #define log_error(...) log_log(LOG_ERROR, __FUNCTION__, __LINE__, __VA_ARGS__)
 #define log_fatal(...) log_log(LOG_FATAL, __FUNCTION__, __LINE__, __VA_ARGS__)
+
+#define LOG_T(...) log_log(LOG_TRACE, __FUNCTION__, __LINE__, __VA_ARGS__) 
+#define LOG_D(...) log_log(LOG_DEBUG, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define LOG_I(...) log_log(LOG_INFO,  __FUNCTION__, __LINE__, __VA_ARGS__)
+#define LOG_W(...) log_log(LOG_WARN,  __FUNCTION__, __LINE__, __VA_ARGS__)
+#define LOG_E(...) log_log(LOG_ERROR, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define LOG_F(...) log_log(LOG_FATAL, __FUNCTION__, __LINE__, __VA_ARGS__)
+
 
 void log_set_udata(void *udata);
 void log_set_lock(log_LockFn fn);

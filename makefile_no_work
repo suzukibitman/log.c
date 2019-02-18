@@ -1,0 +1,7 @@
+CC = gcc
+CFLAGS = -shared -fPIC -Wall
+LIB = liblogc.so
+SRC = ./src/log.c
+
+all:
+	$(CC) $(CFLAGS) -o $(LIB) $(SRC)

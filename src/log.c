@@ -40,6 +40,7 @@ static struct {
   int quiet;
 } L;
 
+
 static struct func_info{
 	bool inUse;
 	int  recoderLine;
@@ -53,6 +54,8 @@ static struct func_info func_list[MAX_FUNC_SAVE] = {0};
 static const char *level_names[] = {
   "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
 };
+
+#define LOG_USE_COLOR
 
 #ifdef LOG_USE_COLOR
 static const char *level_colors[] = {
@@ -118,7 +121,7 @@ void log_log(int level, const char *function, int line, const char *fmt, ...)
   //セマフォ管理しよう
   lock();
   int index = trace_function(line, function);
-  printf("idnex :%d \n" ,index);
+  //printf("idnex :%d \n" ,index);
 
   /* Get current time */
   time_t t = time(NULL);
@@ -131,11 +134,12 @@ void log_log(int level, const char *function, int line, const char *fmt, ...)
     buf[strftime(buf, sizeof(buf), "%H:%M:%S", lt)] = '\0';
 #ifdef LOG_USE_COLOR
     fprintf(
-      stderr, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
-      buf, level_colors[level], level_names[level], function, line);
+      stderr, "[%s] %s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
+      LOG_WORD, buf, level_colors[level], level_names[level], function, line);
 #else
     fprintf(stderr, 
-			"%s %-5s %s:%d:[seq]:%ld ", 
+			"[%s] %s %-5s %s:%d:[seq]:%ld ", 
+			LOG_WORD,
 			buf, 
 			level_names[level],
 			function,
@@ -195,12 +199,12 @@ static int trace_function(const int line, const char *function_name)
 	if (!foundFuncInList)
 	{
 		ret_index= i++;
-		printf("ret_index = %d\n", ret_index);
+		//printf("ret_index = %d\n", ret_index);
 		func_list[ret_index].inUse = true;
 		func_list[ret_index].recoderLine = line;
 		func_list[ret_index].seqCounter = 1;
 		strcpy(func_list[ret_index].funcName, function_name);
-		printf("function %s, list.funcName: %s\n", function_name, func_list[ret_index].funcName);
+		//printf("function %s, list.funcName: %s\n", function_name, func_list[ret_index].funcName);
 	}
 
 	return ret_index;
