@@ -27,7 +27,7 @@
 #include <time.h>
 #include <stdbool.h>
 
-#include "log.h"
+#include "mylog.h"
 
 #define MAX_FUNC_SAVE 32
 #define MAX_FUNC_LENGTH 64
@@ -109,9 +109,8 @@ void log_set_quiet(int enable) {
  * dumpFile
  * */
 
-void log_log(int level, const char *function, int line, const char *fmt, ...) 
+void log_log(int level, const char *function, int line, const unsigned long threadID,const char *fmt, ...) 
 {
-
 	if (level < L.level) 
 	{
 		return;
@@ -138,20 +137,22 @@ void log_log(int level, const char *function, int line, const char *fmt, ...)
 		buf[strftime(buf, sizeof(buf), "%H:%M:%S", lt)] = '\0';
 #ifdef LOG_USE_COLOR
 		fprintf(
-				stderr, "[%s] %s:%06d %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
+				stderr, "[%s] %s:%06d [t]:%lx %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
 				LOG_WORD,
 				buf,
 				logerTime.tv_usec,
+				threadID,
 				level_colors[level],
 				level_names[level],
 				function,
 				line);
 #else
 		fprintf(stderr, 
-				"[%s] %s:%06d %-5s %s:%d:[seq]:%ld ", 
+				"[%s] %s:%06d [t]:%lx %-5s %s:%d:[seq]:%ld ", 
 				LOG_WORD,
 				buf, 
 				logerTime.tv_usec,
+				threadID,
 				level_names[level],
 				function,
 				line,
