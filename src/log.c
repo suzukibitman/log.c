@@ -27,7 +27,7 @@
 #include <time.h>
 #include <stdbool.h>
 
-#include "mylog.h"
+#include "log.h"
 
 #define MAX_FUNC_SAVE 32
 #define MAX_FUNC_LENGTH 64
